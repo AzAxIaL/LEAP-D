@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to LinguaSight will be documented in this file.
+All notable changes to LEAP-D will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Acceptance checklist mapped to specification
 
 ### Changed
-- N/A
+- Project renamed from LinguaSight to LEAP-D (Longitudinal ESL Assessment of Proficiency and Disfluency)
 
 ### Deprecated
 - N/A

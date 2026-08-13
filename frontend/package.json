@@ -1,8 +1,9 @@
 {
-  "name": "efl-speaking-analysis-frontend",
+  "name": "leap-d-frontend",
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "description": "LEAP-D: Longitudinal ESL Assessment of Proficiency and Disfluency - Frontend",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

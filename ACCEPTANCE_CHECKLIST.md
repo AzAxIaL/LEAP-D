@@ -1,4 +1,4 @@
-# LinguaSight Acceptance Checklist
+# LEAP-D Acceptance Checklist
 
 This document maps specification requirements to implementation verification.
 

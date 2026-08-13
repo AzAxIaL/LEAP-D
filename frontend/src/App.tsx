@@ -15,7 +15,7 @@ function App() {
             <nav className="flex items-center justify-between">
               <div className="flex items-center gap-6">
                 <Link to="/" className="text-xl font-bold text-primary">
-                  LinguaSight
+                  LEAP-D
                 </Link>
                 <div className="hidden md:flex items-center gap-4">
                   <Link 
@@ -69,7 +69,7 @@ function App() {
         <footer className="border-t mt-auto">
           <div className="container mx-auto px-4 py-4">
             <div className="flex flex-col sm:flex-row justify-between items-center gap-2 text-sm text-muted-foreground">
-              <span>LinguaSight - For formative assessment only</span>
+              <span>LEAP-D - For formative assessment only</span>
               <span>Not validated for high-stakes decisions</span>
             </div>
           </div>

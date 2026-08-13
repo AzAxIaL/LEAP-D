@@ -1,6 +1,10 @@
-# EFL Speaking Analysis Platform
+# LEAP-D: Longitudinal ESL Assessment of Proficiency and Disfluency
 
-A privacy-first, evidence-based platform for analyzing adult Japanese EFL learners' speaking proficiency. Built with CEFR Companion Volume alignment and ACTFL crosswalk support.
+**Local-first, privacy-preserving speech analysis for adult Japanese EFL contexts.**
+
+Version: 0.1.0 | Phase: 1 (MVP) | Status: Development
+
+LEAP-D is a local-first web application for longitudinal, evidence-linked formative assessment of spoken English in adult Japanese EFL contexts. It provides trusted multi-track review, reliable transcript correction, teacher-controlled disfluency analysis, and CEFR-aligned evidence profiles—without requiring cloud processing or compromising learner dignity.
 
 ## Principles
 
@@ -9,6 +13,7 @@ A privacy-first, evidence-based platform for analyzing adult Japanese EFL learne
 3. **Evidence-linked assessments** — Every claim links to timestamped audio, transcript, and provenance
 4. **Fairness and dignity** — Japanese use and L2 phenomena are not treated as errors
 5. **No medical diagnosis** — Disfluency patterns are never labeled as speech disorders
+6. **Learner dignity** — Preserve translanguaging verbatim; separate L2 planning from disorder-like patterns
 
 ## Tech Stack
 

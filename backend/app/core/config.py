@@ -67,6 +67,16 @@ class StorageSettings(BaseSettings):
 class ProcessingSettings(BaseSettings):
     """Audio processing configuration."""
     max_audio_duration_hours: int = Field(default=2, description="Maximum audio duration")
+    max_session_duration_hours: int = Field(default=2, description="Maximum session duration")
+    vad_min_speech_duration_ms: int = Field(default=250, description="VAD threshold")
+    silence_trimming_enabled: bool = Field(default=False, description="Enable silence trimming")
+    loudness_normalization_target: int = Field(
+        default=-16,
+        description="Loudness normalization target in LUFS"
+    )
+    ffmpeg_path: Optional[str] = Field(default=None, description="Path to FFmpeg binary")
+    """Audio processing configuration."""
+    max_audio_duration_hours: int = Field(default=2, description="Maximum audio duration")
     vad_min_speech_duration_ms: int = Field(default=250, description="VAD threshold")
     silence_trimming_enabled: bool = Field(default=False, description="Enable silence trimming")
     loudness_normalization_target: int = Field(
@@ -154,3 +164,7 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """Get cached settings instance."""
     return Settings()
+
+
+# Global settings instance for convenience
+settings = get_settings()
