@@ -1,6 +1,15 @@
-# EFL Speaking Analysis Platform - Setup Script for Windows
+# LEAP-D: Longitudinal ESL Assessment of Proficiency and Disfluency - Setup Script for Windows
 
-Write-Host "=== EFL Speaking Analysis Platform Setup ===" -ForegroundColor Cyan
+Write-Host "=== LEAP-D Setup ===" -ForegroundColor Cyan
+
+# Check uv
+Write-Host "`nChecking uv..." -ForegroundColor Yellow
+$uvVersion = uv --version 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "uv not found. Please install uv: https://docs.astral.sh/uv/getting-started/installation/" -ForegroundColor Red
+    exit 1
+}
+Write-Host "Found: $uvVersion" -ForegroundColor Green
 
 # Check Python
 Write-Host "`nChecking Python..." -ForegroundColor Yellow
@@ -33,20 +42,16 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host "`n=== Setting up Backend ===" -ForegroundColor Cyan
 Set-Location $PSScriptRoot\..\backend
 
-if (!(Test-Path "venv")) {
-    Write-Host "Creating virtual environment..." -ForegroundColor Yellow
-    python -m venv venv
+if (!(Test-Path ".venv")) {
+    Write-Host "Creating virtual environment with uv..." -ForegroundColor Yellow
+    uv venv
 }
 
-Write-Host "Activating virtual environment..." -ForegroundColor Yellow
-.\venv\Scripts\Activate.ps1
-
-Write-Host "Installing Python dependencies..." -ForegroundColor Yellow
-pip install --upgrade pip
-pip install -r requirements.txt
+Write-Host "Installing Python dependencies with uv..." -ForegroundColor Yellow
+uv pip install -r requirements.txt
 
 Write-Host "Running database migrations..." -ForegroundColor Yellow
-alembic upgrade head
+.\.venv\Scripts\Activate.ps1; alembic upgrade head; deactivate
 
 # Setup Frontend
 Write-Host "`n=== Setting up Frontend ===" -ForegroundColor Cyan
@@ -65,5 +70,5 @@ if (!(Test-Path "$PSScriptRoot\..\backend\.env")) {
 
 Write-Host "`n=== Setup Complete ===" -ForegroundColor Green
 Write-Host "`nTo start the application:" -ForegroundColor Cyan
-Write-Host "  Backend:  cd backend; .\venv\Scripts\Activate.ps1; uvicorn app.main:app --reload" -ForegroundColor White
+Write-Host "  Backend:  cd backend; .\.venv\Scripts\Activate.ps1; uvicorn app.main:app --reload" -ForegroundColor White
 Write-Host "  Frontend: cd frontend; npm run dev" -ForegroundColor White
