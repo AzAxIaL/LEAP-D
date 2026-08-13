@@ -1,87 +1,31 @@
-# run_dev.ps1 - Development runner for LinguaSight
-# Starts both backend and frontend in development mode
+# run_dev.ps1 - Run LEAP-D in development mode (PowerShell)
 
-param(
-    [switch]$BackendOnly,
-    [switch]$FrontendOnly,
-    [string]$BackendHost = "http://localhost:8000",
-    [string]$FrontendPort = "3000"
-)
+Write-Host "=== LEAP-D Development Mode ===" -ForegroundColor Cyan
 
-$ErrorActionPreference = "Stop"
-
-Write-Host "=== LinguaSight Development Runner ===" -ForegroundColor Cyan
-
-# Load environment variables
-if (Test-Path ".env") {
-    Write-Host "Loading environment from .env..." -ForegroundColor Gray
-    Get-Content .env | ForEach-Object {
-        if ($_ -match '^\s*([^#][^=]+)\s*=\s*(.+)\s*$') {
-            $name = $matches[1].Trim()
-            $value = $matches[2].Trim().Trim('"').Trim("'")
-            [Environment]::SetEnvironmentVariable($name, $value, "Process")
-        }
-    }
+# Activate virtual environment
+if (Test-Path ".venv\Scripts\Activate.ps1") {
+    & .\.venv\Scripts\Activate.ps1
+} else {
+    Write-Host "Error: Virtual environment not found. Run .\scripts\setup.ps1 first." -ForegroundColor Red
+    exit 1
 }
 
-# Backend process
-$backendJob = $null
-if (-not $FrontendOnly) {
-    Write-Host "Starting backend server..." -ForegroundColor Green
-    
-    $backendJob = Start-Job -ScriptBlock {
-        Set-Location $using:PWD
-        & uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-    }
-    
-    Write-Host "Backend starting on http://localhost:8000" -ForegroundColor Green
-    Write-Host "API docs: http://localhost:8000/docs" -ForegroundColor Gray
-}
+# Start backend in background
+Write-Host "Starting backend server..." -ForegroundColor Yellow
+Start-Process -FilePath "uvicorn" -ArgumentList "backend.app.main:app", "--reload", "--host", "0.0.0.0", "--port", "8000" -NoNewWindow
+Write-Host "Backend running on http://localhost:8000" -ForegroundColor Green
 
-# Frontend process
-$frontendJob = $null
-if (-not $BackendOnly) {
-    Write-Host "Starting frontend dev server..." -ForegroundColor Green
-    
-    $frontendJob = Start-Job -ScriptBlock {
-        Set-Location "$using:PWD/frontend"
-        $env:VITE_API_URL = $using:BackendHost
-        & npm run dev -- --port $using:FrontendPort --host
-    }
-    
-    Write-Host "Frontend starting on http://localhost:$FrontendPort" -ForegroundColor Green
-}
+# Wait for backend to start
+Start-Sleep -Seconds 3
 
-Write-Host ""
-Write-Host "Press Ctrl+C to stop all servers" -ForegroundColor Yellow
+# Start frontend
+Write-Host "Starting frontend dev server..." -ForegroundColor Yellow
+Set-Location frontend
+Start-Process -FilePath "npm" -ArgumentList "run", "dev" -NoNewWindow
+Set-Location ..
 
-# Wait for interrupt
-try {
-    while ($true) {
-        Start-Sleep -Seconds 1
-        
-        # Check if jobs are still running
-        if ($backendJob -and $backendJob.JobStateInfo.State -ne 'Running') {
-            Write-Host "Backend stopped unexpectedly" -ForegroundColor Red
-            break
-        }
-        if ($frontendJob -and $frontendJob.JobStateInfo.State -ne 'Running') {
-            Write-Host "Frontend stopped unexpectedly" -ForegroundColor Red
-            break
-        }
-    }
-}
-finally {
-    Write-Host "`nShutting down..." -ForegroundColor Yellow
-    
-    if ($backendJob) {
-        Stop-Job $backendJob -ErrorAction SilentlyContinue
-        Remove-Job $backendJob -ErrorAction SilentlyContinue
-    }
-    if ($frontendJob) {
-        Stop-Job $frontendJob -ErrorAction SilentlyContinue
-        Remove-Job $frontendJob -ErrorAction SilentlyContinue
-    }
-    
-    Write-Host "All servers stopped." -ForegroundColor Gray
-}
+Write-Host "`n=== LEAP-D is running ===" -ForegroundColor Green
+Write-Host "Frontend: http://localhost:5173" -ForegroundColor White
+Write-Host "Backend API: http://localhost:8000" -ForegroundColor White
+Write-Host "API Docs: http://localhost:8000/docs" -ForegroundColor White
+Write-Host "`nPress Ctrl+C to stop all servers" -ForegroundColor Yellow

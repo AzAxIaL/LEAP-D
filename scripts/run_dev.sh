@@ -1,54 +1,43 @@
 #!/usr/bin/env bash
-# run_dev.sh - Development runner for LinguaSight on macOS/Linux
+# run_dev.sh - Run LEAP-D in development mode
 
 set -e
 
-echo "=== LinguaSight Development Runner ==="
-echo ""
+echo "=== LEAP-D Development Mode ==="
 
-# Load environment variables from .env
-if [ -f .env ]; then
-    echo "Loading environment from .env..."
-    export $(grep -v '^#' .env | xargs)
+# Activate virtual environment
+if [ -f ".venv/bin/activate" ]; then
+    source .venv/bin/activate
+else
+    echo "Error: Virtual environment not found. Run ./scripts/setup.sh first."
+    exit 1
 fi
 
-# Function to cleanup on exit
-cleanup() {
-    echo ""
-    echo "Shutting down..."
-    if [ ! -z "$BACKEND_PID" ]; then
-        kill $BACKEND_PID 2>/dev/null || true
-    fi
-    if [ ! -z "$FRONTEND_PID" ]; then
-        kill $FRONTEND_PID 2>/dev/null || true
-    fi
-    echo "All servers stopped."
-}
-
-trap cleanup EXIT
-
-# Start backend
+# Start backend in background
 echo "Starting backend server..."
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 &
+uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000 &
 BACKEND_PID=$!
-echo "Backend starting on http://localhost:8000"
-echo "API docs: http://localhost:8000/docs"
-echo ""
+echo "Backend running on http://localhost:8000 (PID: $BACKEND_PID)"
 
 # Wait for backend to start
-sleep 2
+sleep 3
 
 # Start frontend
 echo "Starting frontend dev server..."
 cd frontend
-VITE_API_URL="${VITE_API_URL:-http://localhost:8000}" npm run dev &
+npm run dev &
 FRONTEND_PID=$!
 cd ..
-echo "Frontend starting on http://localhost:3000"
-echo ""
 
+echo ""
+echo "=== LEAP-D is running ==="
+echo "Frontend: http://localhost:5173"
+echo "Backend API: http://localhost:8000"
+echo "API Docs: http://localhost:8000/docs"
+echo ""
 echo "Press Ctrl+C to stop all servers"
-echo ""
 
-# Wait for processes
+# Wait for interrupt
+trap "kill $BACKEND_PID $FRONTEND_PID 2>/dev/null; exit" INT TERM EXIT
+
 wait
