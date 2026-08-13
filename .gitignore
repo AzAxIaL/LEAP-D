@@ -4,40 +4,29 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.pyc~
+*.py~
 .Python
-env/
 venv/
 .venv/
-.venv.bak/
-pip-log.txt
-pip-delete-this-directory.txt
-.tox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.log
-*.pot
-*.po
-*~
-.pytest_cache/
-.mypy_cache/
-
-# Database
-*.sqlite
-*.sqlite3
-.dynamodb/
-
-# Environment variables
 .env
 .env.local
-.env.dev
-.env.test
-.env.prod
-*.env
 .env.*
+
+# Alembic
+alembic/versions/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
 
 # IDE
 .vscode/
@@ -45,8 +34,4 @@ coverage.xml
 *.swp
 *.swo
 *.tmp
-
-# OS
-.DS_Store
-Thumbs.db
 ```
