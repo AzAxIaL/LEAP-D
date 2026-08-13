@@ -8,6 +8,7 @@ import logging
 from app.core.config import get_settings
 from app.db.base import init_db
 from app.api.v1 import courses, students, sessions, jobs, audio_files, disfluencies
+from app.routers import diarization
 
 settings = get_settings()
 
@@ -52,6 +53,7 @@ def create_app() -> FastAPI:
     app.include_router(jobs.router, prefix="/api/v1/jobs", tags=["jobs"])
     app.include_router(audio_files.router, prefix="/api/v1/audio-files", tags=["audio-files"])
     app.include_router(disfluencies.router, prefix="/api/v1", tags=["disfluencies"])
+    app.include_router(diarization.router, prefix="/api/v1", tags=["diarization"])
     
     @app.get("/health")
     def health_check():
