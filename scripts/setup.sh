@@ -1,97 +1,99 @@
 #!/usr/bin/env bash
-# setup.sh - Setup script for LinguaSight on macOS/Linux
+# setup.sh - Setup script for LEAP-D on macOS/Linux
+# Longitudinal ESL Assessment of Proficiency and Disfluency
 
 set -e
 
-echo "=== LinguaSight Setup Script ==="
+echo "=== LEAP-D Setup Script ==="
 echo ""
 
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Check Python version
-echo "Checking Python version..."
+echo -e "${YELLOW}[1/6] Checking prerequisites...${NC}"
 if ! command -v python3 &> /dev/null; then
     echo -e "${RED}Error: Python 3 not found${NC}"
     exit 1
 fi
 
-PYTHON_VERSION=$(python3 --version | cut -d' ' -f2)
-REQUIRED_VERSION="3.11"
-
-if [[ "$(printf '%s\n' "$REQUIRED_VERSION" "$PYTHON_VERSION" | sort -V | head -n1)" != "$REQUIRED_VERSION" ]]; then
-    echo -e "${RED}Error: Python 3.11+ required (found $PYTHON_VERSION)${NC}"
+PYTHON_VERSION=$(python3 --version)
+if python3 --version | grep -qE "Python 3\.1[1-9]|Python 3\.[2-9][0-9]"; then
+    echo -e "${GREEN}✓ Python found: $PYTHON_VERSION${NC}"
+else
+    echo -e "${RED}✗ Python 3.11+ required. Found: $PYTHON_VERSION${NC}"
     exit 1
 fi
-echo -e "${GREEN}✓ Python $PYTHON_VERSION found${NC}"
 
-# Check Node.js version
-echo "Checking Node.js version..."
+# Check uv
+if ! command -v uv &> /dev/null; then
+    echo -e "${YELLOW}✗ uv not found. Installing uv...${NC}"
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    export PATH="$HOME/.local/bin:$PATH"
+else
+    UV_VERSION=$(uv --version)
+    echo -e "${GREEN}✓ uv found: $UV_VERSION${NC}"
+fi
+
+# Check Node.js
 if ! command -v node &> /dev/null; then
-    echo -e "${RED}Error: Node.js not found${NC}"
+    echo -e "${RED}✗ Node.js not found. Please install Node.js 18+${NC}"
     exit 1
 fi
 
-NODE_VERSION=$(node --version | cut -d'v' -f2)
-REQUIRED_NODE="18"
-
-if [[ "$(printf '%s\n' "$REQUIRED_NODE" "$NODE_VERSION" | sort -V | head -n1)" != "$REQUIRED_NODE" ]]; then
-    echo -e "${RED}Error: Node.js 18+ required (found $NODE_VERSION)${NC}"
+NODE_VERSION=$(node --version)
+if node --version | grep -qE "v1[8-9]|v[2-9][0-9]"; then
+    echo -e "${GREEN}✓ Node.js found: $NODE_VERSION${NC}"
+else
+    echo -e "${RED}✗ Node.js 18+ required. Found: $NODE_VERSION${NC}"
     exit 1
 fi
-echo -e "${GREEN}✓ Node.js $NODE_VERSION found${NC}"
 
 # Check FFmpeg
-echo "Checking FFmpeg..."
 if ! command -v ffmpeg &> /dev/null; then
-    echo -e "${YELLOW}Warning: FFmpeg not found. Install with:${NC}"
-    echo "  macOS: brew install ffmpeg"
-    echo "  Linux: sudo apt install ffmpeg"
+    echo -e "${YELLOW}⚠ FFmpeg not found. Audio processing will be limited.${NC}"
+    echo -e "${CYAN}  Install via: brew install ffmpeg (macOS) or sudo apt install ffmpeg (Linux)${NC}"
 else
-    echo -e "${GREEN}✓ FFmpeg found${NC}"
+    FFMPEG_VERSION=$(ffmpeg -version | head -n 1)
+    echo -e "${GREEN}✓ FFmpeg found: $FFMPEG_VERSION${NC}"
 fi
 
-# Create virtual environment
-echo ""
-echo "Creating Python virtual environment..."
-python3 -m venv venv
-source venv/bin/activate
+# Create virtual environment with uv
+echo -e "${YELLOW}[2/6] Creating virtual environment with uv...${NC}"
+uv venv .venv
 
-# Install Python dependencies
-echo "Installing Python dependencies..."
-pip install --upgrade pip
-pip install -r requirements.txt
+# Activate virtual environment
+echo -e "${YELLOW}[3/6] Activating virtual environment...${NC}"
+source .venv/bin/activate
 
-# Install Node.js dependencies
-echo ""
-echo "Installing Node.js dependencies..."
+# Install backend dependencies
+echo -e "${YELLOW}[4/6] Installing backend dependencies...${NC}"
+uv pip install -e ".[asr,diarization,dev]"
+
+# Install frontend dependencies
+echo -e "${YELLOW}[5/6] Installing frontend dependencies...${NC}"
 cd frontend
 npm install
 cd ..
 
-# Copy environment file
-if [ ! -f .env ]; then
-    echo "Creating .env from .env.example..."
-    cp .env.example .env
-fi
-
-# Run database migrations
-echo ""
-echo "Running database migrations..."
+# Initialize database
+echo -e "${YELLOW}[6/6] Initializing database...${NC}"
 alembic upgrade head
 
-# Create data directories
-echo "Creating data directories..."
-mkdir -p data/audio data/processed data/voiceprints data/artifacts data/reports logs
+# Copy environment file
+if [ ! -f ".env" ]; then
+    cp .env.example .env
+    echo -e "${GREEN}✓ Created .env from .env.example${NC}"
+else
+    echo -e "${GREEN}✓ .env already exists${NC}"
+fi
 
-echo ""
-echo -e "${GREEN}=== Setup Complete ===${NC}"
-echo ""
-echo "To start the application:"
-echo "  Backend:  source venv/bin/activate && uvicorn app.main:app --reload"
-echo "  Frontend: cd frontend && npm run dev"
-echo ""
-echo "Or use: ./scripts/run_dev.sh"
+echo -e "\n${GREEN}=== Setup Complete! ===${NC}"
+echo -e "\n${CYAN}To run LEAP-D:${NC}"
+echo -e "  Backend:  source .venv/bin/activate && uvicorn backend.app.main:app --reload"
+echo -e "  Frontend: cd frontend && npm run dev"
+echo -e "\nThen open http://localhost:5173 in your browser.${NC}"
