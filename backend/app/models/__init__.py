@@ -438,7 +438,7 @@ class Job(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     retry_count: Mapped[int] = mapped_column(Integer, default=0)
     max_retries: Mapped[int] = mapped_column(Integer, default=3)
-    metadata: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    job_metadata: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     
     # Relationships
     session: Mapped["Session"] = relationship("Session", back_populates="jobs")
@@ -456,7 +456,7 @@ class JobStageResult(Base):
     stage: Mapped[JobStage] = mapped_column(Enum(JobStage), nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False)  # success, failed, skipped
     artifact_path: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
-    metadata: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    stage_metadata: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     logs: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     duration_seconds: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
@@ -597,7 +597,7 @@ class Report(Base):
     version: Mapped[int] = mapped_column(Integer, default=1)
     format: Mapped[str] = mapped_column(String(10), default="html")  # html, json, csv, pdf
     file_path: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
-    metadata: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    report_metadata: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     
     # Relationships
     course: Mapped["Course"] = relationship("Course", back_populates="reports")
