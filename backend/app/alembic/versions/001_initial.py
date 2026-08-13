@@ -1,0 +1,503 @@
+"""Initial database schema migration."""
+from alembic import op
+import sqlalchemy as sa
+
+# revision identifiers, used by Alembic.
+revision = "001_initial"
+down_revision = None
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    """Create initial database schema."""
+    # Courses table
+    op.create_table(
+        "courses",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("name", sa.String(length=255), nullable=False),
+        sa.Column("description", sa.Text(), nullable=True),
+        sa.Column("created_at", sa.DateTime(), nullable=True),
+        sa.Column("updated_at", sa.DateTime(), nullable=True),
+        sa.Column("retention_days", sa.Integer(), nullable=True),
+        sa.Column("is_archived", sa.Boolean(), nullable=True),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index(op.f("ix_courses_id"), "courses", ["id"], unique=False)
+
+    # Students table
+    op.create_table(
+        "students",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("stable_id", sa.String(length=100), nullable=False),
+        sa.Column("first_name", sa.String(length=100), nullable=False),
+        sa.Column("course_id", sa.Integer(), nullable=False),
+        sa.Column("created_at", sa.DateTime(), nullable=True),
+        sa.Column("updated_at", sa.DateTime(), nullable=True),
+        sa.Column("is_active", sa.Boolean(), nullable=True),
+        sa.ForeignKeyConstraint(["course_id"], ["courses.id"]),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index(op.f("ix_students_id"), "students", ["id"], unique=False)
+    op.create_index(op.f("ix_students_stable_id"), "students", ["stable_id"], unique=True)
+
+    # Consents table
+    op.create_table(
+        "consents",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("student_id", sa.Integer(), nullable=False),
+        sa.Column("consent_type", sa.String(length=50), nullable=False),
+        sa.Column(
+            "status",
+            sa.Enum("PENDING", "GRANTED", "WITHDRAWN", "EXPIRED", name="consentstatus"),
+            nullable=True,
+        ),
+        sa.Column("granted_at", sa.DateTime(), nullable=True),
+        sa.Column("withdrawn_at", sa.DateTime(), nullable=True),
+        sa.Column("expires_at", sa.DateTime(), nullable=True),
+        sa.Column("notes", sa.Text(), nullable=True),
+        sa.Column("created_at", sa.DateTime(), nullable=True),
+        sa.ForeignKeyConstraint(["student_id"], ["students.id"]),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index(op.f("ix_consents_id"), "consents", ["id"], unique=False)
+    op.create_index(
+        "idx_consents_student_type", "consents", ["student_id", "consent_type"]
+    )
+
+    # Sessions table
+    op.create_table(
+        "sessions",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("course_id", sa.Integer(), nullable=False),
+        sa.Column("name", sa.String(length=255), nullable=False),
+        sa.Column("description", sa.Text(), nullable=True),
+        sa.Column("recorded_at", sa.DateTime(), nullable=True),
+        sa.Column("created_at", sa.DateTime(), nullable=True),
+        sa.Column("updated_at", sa.DateTime(), nullable=True),
+        sa.Column("task_type", sa.String(length=100), nullable=True),
+        sa.Column("task_context", sa.JSON(), nullable=True),
+        sa.Column(
+            "audio_source_type",
+            sa.Enum("MULTI_TRACK", "MIXED_FILE", name="audiosourcetype"),
+            nullable=True,
+        ),
+        sa.ForeignKeyConstraint(["course_id"], ["courses.id"]),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index(op.f("ix_sessions_id"), "sessions", ["id"], unique=False)
+
+    # Session participants table
+    op.create_table(
+        "session_participants",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("session_id", sa.Integer(), nullable=False),
+        sa.Column("student_id", sa.Integer(), nullable=True),
+        sa.Column(
+            "role",
+            sa.Enum("STUDENT", "INSTRUCTOR", "UNKNOWN", "MIXED", name="role"),
+            nullable=True,
+        ),
+        sa.Column("track_number", sa.Integer(), nullable=True),
+        sa.Column("display_name", sa.String(length=100), nullable=True),
+        sa.ForeignKeyConstraint(["session_id"], ["sessions.id"]),
+        sa.ForeignKeyConstraint(["student_id"], ["students.id"]),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("session_id", "track_number", name="uq_session_track"),
+    )
+    op.create_index(
+        op.f("ix_session_participants_id"), "session_participants", ["id"], unique=False
+    )
+
+    # Audio files table
+    op.create_table(
+        "audio_files",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("session_id", sa.Integer(), nullable=False),
+        sa.Column("original_filename", sa.String(length=500), nullable=False),
+        sa.Column("stored_path", sa.String(length=1000), nullable=False),
+        sa.Column("content_hash", sa.String(length=64), nullable=False),
+        sa.Column("file_size_bytes", sa.Integer(), nullable=False),
+        sa.Column("duration_seconds", sa.Numeric(precision=10, scale=2), nullable=False),
+        sa.Column("sample_rate", sa.Integer(), nullable=False),
+        sa.Column("channels", sa.Integer(), nullable=True),
+        sa.Column("codec", sa.String(length=50), nullable=True),
+        sa.Column("import_source", sa.String(length=100), nullable=True),
+        sa.Column("imported_at", sa.DateTime(), nullable=True),
+        sa.Column("is_processed", sa.Boolean(), nullable=True),
+        sa.Column("processed_path", sa.String(length=1000), nullable=True),
+        sa.Column("processing_metadata", sa.JSON(), nullable=True),
+        sa.ForeignKeyConstraint(["session_id"], ["sessions.id"]),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index(op.f("ix_audio_files_id"), "audio_files", ["id"], unique=False)
+    op.create_index(
+        op.f("ix_audio_files_content_hash"), "audio_files", ["content_hash"], unique=False
+    )
+
+    # Transcripts table
+    op.create_table(
+        "transcripts",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("audio_file_id", sa.Integer(), nullable=False),
+        sa.Column("asr_provider", sa.String(length=50), nullable=False),
+        sa.Column("asr_model", sa.String(length=100), nullable=False),
+        sa.Column("asr_language", sa.String(length=10), nullable=False),
+        sa.Column("overall_confidence", sa.Float(), nullable=True),
+        sa.Column("word_level_confidence", sa.Boolean(), nullable=True),
+        sa.Column("created_at", sa.DateTime(), nullable=True),
+        sa.Column("version", sa.Integer(), nullable=True),
+        sa.Column("raw_segments", sa.JSON(), nullable=True),
+        sa.ForeignKeyConstraint(["audio_file_id"], ["audio_files.id"]),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index(op.f("ix_transcripts_id"), "transcripts", ["id"], unique=False)
+
+    # Utterances table
+    op.create_table(
+        "utterances",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("transcript_id", sa.Integer(), nullable=False),
+        sa.Column("speaker_label", sa.String(length=50), nullable=False),
+        sa.Column("start_time", sa.Numeric(precision=10, scale=4), nullable=False),
+        sa.Column("end_time", sa.Numeric(precision=10, scale=4), nullable=False),
+        sa.Column("text", sa.Text(), nullable=False),
+        sa.Column("confidence", sa.Float(), nullable=True),
+        sa.Column("is_reviewed", sa.Boolean(), nullable=True),
+        sa.Column("reviewed_by", sa.String(length=100), nullable=True),
+        sa.Column("reviewed_at", sa.DateTime(), nullable=True),
+        sa.Column("revision_notes", sa.Text(), nullable=True),
+        sa.ForeignKeyConstraint(["transcript_id"], ["transcripts.id"]),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index(op.f("ix_utterances_id"), "utterances", ["id"], unique=False)
+    op.create_index(
+        "idx_utterances_transcript_time",
+        "utterances",
+        ["transcript_id", "start_time"],
+    )
+
+    # Words table
+    op.create_table(
+        "words",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("utterance_id", sa.Integer(), nullable=False),
+        sa.Column("text", sa.String(length=500), nullable=False),
+        sa.Column("start_time", sa.Numeric(precision=10, scale=4), nullable=False),
+        sa.Column("end_time", sa.Numeric(precision=10, scale=4), nullable=False),
+        sa.Column("confidence", sa.Float(), nullable=True),
+        sa.ForeignKeyConstraint(["utterance_id"], ["utterances.id"]),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index(op.f("ix_words_id"), "words", ["id"], unique=False)
+    op.create_index(
+        "idx_words_utterance_time", "words", ["utterance_id", "start_time"]
+    )
+
+    # Disfluency candidates table
+    op.create_table(
+        "disfluency_candidates",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("utterance_id", sa.Integer(), nullable=False),
+        sa.Column(
+            "disfluency_type",
+            sa.Enum(
+                "FILLED_PAUSE",
+                "SILENT_PAUSE",
+                "REPETITION_WORD",
+                "REPETITION_PHRASE",
+                "FALSE_START",
+                "SELF_REPAIR",
+                "REFORMULATION",
+                "ABANDONED_UTTERANCE",
+                "LEXICAL_SEARCH",
+                "POSSIBLE_SOUND_REPETITION",
+                "POSSIBLE_PROLONGATION",
+                name="disfluencytype",
+            ),
+            nullable=False,
+        ),
+        sa.Column("start_time", sa.Numeric(precision=10, scale=4), nullable=False),
+        sa.Column("end_time", sa.Numeric(precision=10, scale=4), nullable=False),
+        sa.Column("evidence_text", sa.Text(), nullable=False),
+        sa.Column("detector", sa.String(length=100), nullable=False),
+        sa.Column("confidence", sa.Float(), nullable=False),
+        sa.Column(
+            "review_status",
+            sa.Enum("PENDING", "ACCEPTED", "REJECTED", "NEEDS_CONTEXT", name="reviewstatus"),
+            nullable=True,
+        ),
+        sa.Column("reviewer", sa.String(length=100), nullable=True),
+        sa.Column("reviewed_at", sa.DateTime(), nullable=True),
+        sa.Column("review_notes", sa.Text(), nullable=True),
+        sa.Column("created_at", sa.DateTime(), nullable=True),
+        sa.ForeignKeyConstraint(["utterance_id"], ["utterances.id"]),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index(
+        op.f("ix_disfluency_candidates_id"), "disfluency_candidates", ["id"], unique=False
+    )
+
+    # Jobs table
+    op.create_table(
+        "jobs",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("session_id", sa.Integer(), nullable=False),
+        sa.Column("job_type", sa.String(length=100), nullable=False),
+        sa.Column(
+            "status",
+            sa.Enum(
+                "PENDING", "QUEUED", "RUNNING", "COMPLETED", "FAILED", "CANCELLED",
+                name="jobstatus"
+            ),
+            nullable=True,
+        ),
+        sa.Column(
+            "current_stage",
+            sa.Enum(
+                "INGEST", "PREPROCESS", "ASR", "ALIGNMENT", "DIARIZATION", "IDENTITY",
+                "TRANSCRIPT", "DISFLUENCY", "FLUENCY_METRICS", "PRONUNCIATION",
+                "INTERACTION", "ASSESSMENT", "REPORTS", name="jobstage"
+            ),
+            nullable=True,
+        ),
+        sa.Column("progress_percent", sa.Integer(), nullable=True),
+        sa.Column("error_message", sa.Text(), nullable=True),
+        sa.Column("started_at", sa.DateTime(), nullable=True),
+        sa.Column("completed_at", sa.DateTime(), nullable=True),
+        sa.Column("created_at", sa.DateTime(), nullable=True),
+        sa.Column("retry_count", sa.Integer(), nullable=True),
+        sa.Column("max_retries", sa.Integer(), nullable=True),
+        sa.Column("metadata", sa.JSON(), nullable=True),
+        sa.ForeignKeyConstraint(["session_id"], ["sessions.id"]),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index(op.f("ix_jobs_id"), "jobs", ["id"], unique=False)
+
+    # Job stage results table
+    op.create_table(
+        "job_stage_results",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("job_id", sa.Integer(), nullable=False),
+        sa.Column(
+            "stage",
+            sa.Enum(
+                "INGEST", "PREPROCESS", "ASR", "ALIGNMENT", "DIARIZATION", "IDENTITY",
+                "TRANSCRIPT", "DISFLUENCY", "FLUENCY_METRICS", "PRONUNCIATION",
+                "INTERACTION", "ASSESSMENT", "REPORTS", name="jobstage"
+            ),
+            nullable=False,
+        ),
+        sa.Column("status", sa.String(length=20), nullable=False),
+        sa.Column("artifact_path", sa.String(length=1000), nullable=True),
+        sa.Column("metadata", sa.JSON(), nullable=True),
+        sa.Column("logs", sa.Text(), nullable=True),
+        sa.Column("duration_seconds", sa.Numeric(precision=10, scale=2), nullable=True),
+        sa.Column("created_at", sa.DateTime(), nullable=True),
+        sa.ForeignKeyConstraint(["job_id"], ["jobs.id"]),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("job_id", "stage", name="uq_job_stage"),
+    )
+    op.create_index(
+        op.f("ix_job_stage_results_id"), "job_stage_results", ["id"], unique=False
+    )
+
+    # Voiceprints table (Phase 2)
+    op.create_table(
+        "voiceprints",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("student_id", sa.Integer(), nullable=False),
+        sa.Column("embedding_data", sa.LargeBinary(), nullable=False),
+        sa.Column("embedding_version", sa.String(length=50), nullable=False),
+        sa.Column("source_audio_file_id", sa.Integer(), nullable=True),
+        sa.Column("quality_score", sa.Float(), nullable=True),
+        sa.Column("enrollment_duration_seconds", sa.Numeric(precision=10, scale=2), nullable=True),
+        sa.Column("is_active", sa.Boolean(), nullable=True),
+        sa.Column("enrolled_at", sa.DateTime(), nullable=True),
+        sa.Column("deleted_at", sa.DateTime(), nullable=True),
+        sa.ForeignKeyConstraint(["source_audio_file_id"], ["audio_files.id"]),
+        sa.ForeignKeyConstraint(["student_id"], ["students.id"]),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index(op.f("ix_voiceprints_id"), "voiceprints", ["id"], unique=False)
+
+    # Assessments table
+    op.create_table(
+        "assessments",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("student_id", sa.Integer(), nullable=False),
+        sa.Column("session_id", sa.Integer(), nullable=False),
+        sa.Column(
+            "construct_type",
+            sa.Enum(
+                "SPOKEN_PRODUCTION", "SPOKEN_INTERACTION", "PHONOLOGICAL_CONTROL",
+                "RANGE", "ACCURACY", "FLUENCY", "COHERENCE", "ONLINE_CONVERSATION",
+                "MEDIATION_TEXT", "MEDIATION_CONCEPTS", "MEDIATION_COMMUNICATION",
+                "PLURILINGUAL_BEHAVIOUR", "INTERACTIONAL_COMPREHENSION",
+                name="constructtype"
+            ),
+            nullable=False,
+        ),
+        sa.Column(
+            "cefr_provisional_min",
+            sa.Enum(
+                "PRE_A1", "A1", "A2", "B1", "B2", "C1", "C2", name="cefrlevel"
+            ),
+            nullable=True,
+        ),
+        sa.Column(
+            "cefr_provisional_max",
+            sa.Enum(
+                "PRE_A1", "A1", "A2", "B1", "B2", "C1", "C2", name="cefrlevel"
+            ),
+            nullable=True,
+        ),
+        sa.Column("cefr_confidence", sa.Float(), nullable=True),
+        sa.Column("cefr_evidence_ids", sa.JSON(), nullable=True),
+        sa.Column(
+            "actfl_provisional",
+            sa.Enum(
+                "NOVICE_LOW", "NOVICE_MID", "NOVICE_HIGH", "INTERMEDIATE_LOW",
+                "INTERMEDIATE_MID", "INTERMEDIATE_HIGH", "ADVANCED_LOW", "ADVANCED_MID",
+                "ADVANCED_HIGH", "SUPERIOR", "DISTINGUISHED", name="actfllevel"
+            ),
+            nullable=True,
+        ),
+        sa.Column("actfl_crosswalk_label", sa.String(length=50), nullable=True),
+        sa.Column("teacher_confirmed_level", sa.String(length=20), nullable=True),
+        sa.Column(
+            "teacher_status",
+            sa.Enum("PENDING", "ACCEPTED", "REJECTED", "NEEDS_CONTEXT", name="reviewstatus"),
+            nullable=True,
+        ),
+        sa.Column("teacher_notes", sa.Text(), nullable=True),
+        sa.Column("confirmed_at", sa.DateTime(), nullable=True),
+        sa.Column("confirmed_by", sa.String(length=100), nullable=True),
+        sa.Column("coverage_indicator", sa.String(length=20), nullable=True),
+        sa.Column("rubric_version", sa.String(length=50), nullable=False),
+        sa.Column("model_versions", sa.JSON(), nullable=True),
+        sa.Column("review_timestamp", sa.DateTime(), nullable=True),
+        sa.Column("created_at", sa.DateTime(), nullable=True),
+        sa.Column("updated_at", sa.DateTime(), nullable=True),
+        sa.ForeignKeyConstraint(["session_id"], ["sessions.id"]),
+        sa.ForeignKeyConstraint(["student_id"], ["students.id"]),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index(op.f("ix_assessments_id"), "assessments", ["id"], unique=False)
+    op.create_index(
+        "idx_assessments_student_session",
+        "assessments",
+        ["student_id", "session_id"],
+    )
+
+    # Assessment evidence table
+    op.create_table(
+        "assessment_evidence",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("assessment_id", sa.Integer(), nullable=False),
+        sa.Column("evidence_type", sa.String(length=50), nullable=False),
+        sa.Column("descriptor_id", sa.String(length=100), nullable=True),
+        sa.Column("descriptor_text", sa.Text(), nullable=True),
+        sa.Column("timestamp_start", sa.Numeric(precision=10, scale=4), nullable=False),
+        sa.Column("timestamp_end", sa.Numeric(precision=10, scale=4), nullable=False),
+        sa.Column("transcript_text", sa.Text(), nullable=False),
+        sa.Column("speaker_label", sa.String(length=50), nullable=False),
+        sa.Column("confidence", sa.Float(), nullable=False),
+        sa.Column("is_counter_evidence", sa.Boolean(), nullable=True),
+        sa.Column("detector_provenance", sa.String(length=100), nullable=False),
+        sa.Column(
+            "review_state",
+            sa.Enum("PENDING", "ACCEPTED", "REJECTED", "NEEDS_CONTEXT", name="reviewstatus"),
+            nullable=True,
+        ),
+        sa.Column("created_at", sa.DateTime(), nullable=True),
+        sa.ForeignKeyConstraint(["assessment_id"], ["assessments.id"]),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index(
+        op.f("ix_assessment_evidence_id"), "assessment_evidence", ["id"], unique=False
+    )
+
+    # Reports table
+    op.create_table(
+        "reports",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("course_id", sa.Integer(), nullable=False),
+        sa.Column("student_id", sa.Integer(), nullable=True),
+        sa.Column("session_id", sa.Integer(), nullable=True),
+        sa.Column("report_type", sa.String(length=50), nullable=False),
+        sa.Column("title", sa.String(length=500), nullable=False),
+        sa.Column("generated_at", sa.DateTime(), nullable=True),
+        sa.Column("version", sa.Integer(), nullable=True),
+        sa.Column("format", sa.String(length=10), nullable=True),
+        sa.Column("file_path", sa.String(length=1000), nullable=True),
+        sa.Column("metadata", sa.JSON(), nullable=True),
+        sa.ForeignKeyConstraint(["course_id"], ["courses.id"]),
+        sa.ForeignKeyConstraint(["session_id"], ["sessions.id"]),
+        sa.ForeignKeyConstraint(["student_id"], ["students.id"]),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index(op.f("ix_reports_id"), "reports", ["id"], unique=False)
+
+    # Pronunciation candidates table (Phase 3)
+    op.create_table(
+        "pronunciation_candidates",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("word_id", sa.Integer(), nullable=False),
+        sa.Column("issue_type", sa.String(length=100), nullable=False),
+        sa.Column("phonetic_detail", sa.Text(), nullable=True),
+        sa.Column("acoustic_feature", sa.JSON(), nullable=True),
+        sa.Column("asr_confidence", sa.Float(), nullable=True),
+        sa.Column("confidence", sa.Float(), nullable=False),
+        sa.Column(
+            "review_status",
+            sa.Enum("PENDING", "ACCEPTED", "REJECTED", "NEEDS_CONTEXT", name="reviewstatus"),
+            nullable=True,
+        ),
+        sa.Column("teacher_decision", sa.String(length=20), nullable=True),
+        sa.Column("recurrence_count", sa.Integer(), nullable=True),
+        sa.Column("created_at", sa.DateTime(), nullable=True),
+        sa.ForeignKeyConstraint(["word_id"], ["words.id"]),
+        sa.PrimaryKeyConstraint("id"),
+    )
+
+    # Interaction pairs table (Phase 3)
+    op.create_table(
+        "interaction_pairs",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("session_id", sa.Integer(), nullable=False),
+        sa.Column("prompt_utterance_id", sa.Integer(), nullable=False),
+        sa.Column("response_utterance_id", sa.Integer(), nullable=False),
+        sa.Column("response_latency_ms", sa.Numeric(precision=10, scale=2), nullable=True),
+        sa.Column("relevance_score", sa.Float(), nullable=True),
+        sa.Column(
+            "review_status",
+            sa.Enum("PENDING", "ACCEPTED", "REJECTED", "NEEDS_CONTEXT", name="reviewstatus"),
+            nullable=True,
+        ),
+        sa.Column("created_at", sa.DateTime(), nullable=True),
+        sa.ForeignKeyConstraint(["session_id"], ["sessions.id"]),
+        sa.PrimaryKeyConstraint("id"),
+    )
+
+
+def downgrade() -> None:
+    """Drop all tables."""
+    op.drop_table("interaction_pairs")
+    op.drop_table("pronunciation_candidates")
+    op.drop_table("reports")
+    op.drop_table("assessment_evidence")
+    op.drop_table("assessments")
+    op.drop_table("voiceprints")
+    op.drop_table("job_stage_results")
+    op.drop_table("jobs")
+    op.drop_table("disfluency_candidates")
+    op.drop_table("words")
+    op.drop_table("utterances")
+    op.drop_table("transcripts")
+    op.drop_table("audio_files")
+    op.drop_table("session_participants")
+    op.drop_table("sessions")
+    op.drop_table("consents")
+    op.drop_table("students")
+    op.drop_table("courses")
