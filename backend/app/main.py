@@ -7,7 +7,7 @@ import logging
 
 from app.core.config import get_settings
 from app.db.base import init_db
-from app.api.v1 import courses, students, sessions, jobs
+from app.api.v1 import courses, students, sessions, jobs, audio_files
 
 settings = get_settings()
 
@@ -22,10 +22,11 @@ logger = logging.getLogger(__name__)
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
     app = FastAPI(
-        title="EFL Speaking Analysis Platform",
+        title="LEAP-D: Longitudinal ESL Assessment of Proficiency and Disfluency",
         description=(
             "Privacy-first, evidence-based platform for analyzing adult Japanese EFL "
-            "learners' speaking proficiency with CEFR alignment."
+            "learners' speaking proficiency with CEFR alignment. Supports multi-track "
+            "review, transcript correction, disfluency analysis, and longitudinal progress tracking."
         ),
         version="0.1.0",
         docs_url="/docs",
@@ -49,6 +50,7 @@ def create_app() -> FastAPI:
     app.include_router(students.router, prefix="/api/v1/students", tags=["students"])
     app.include_router(sessions.router, prefix="/api/v1/sessions", tags=["sessions"])
     app.include_router(jobs.router, prefix="/api/v1/jobs", tags=["jobs"])
+    app.include_router(audio_files.router, prefix="/api/v1/audio-files", tags=["audio-files"])
     
     @app.get("/health")
     def health_check():
@@ -59,7 +61,7 @@ def create_app() -> FastAPI:
     def root():
         """Root endpoint with API information."""
         return {
-            "name": "EFL Speaking Analysis Platform",
+            "name": "LEAP-D: Longitudinal ESL Assessment of Proficiency and Disfluency",
             "version": "0.1.0",
             "docs": "/docs",
             "health": "/health",

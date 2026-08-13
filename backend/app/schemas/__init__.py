@@ -172,6 +172,24 @@ class SessionParticipantResponse(BaseModel):
 
 # ============== AUDIO FILE ==============
 
+class AudioFileBase(BaseModel):
+    """Base audio file schema."""
+    original_filename: str
+    import_source: str = "upload"
+
+
+class AudioFileCreate(AudioFileBase):
+    """Schema for creating an audio file record."""
+    session_id: int
+    stored_path: str
+    content_hash: str
+    file_size_bytes: int
+    duration_seconds: float
+    sample_rate: int
+    channels: int
+    codec: Optional[str] = None
+
+
 class AudioFileResponse(BaseModel):
     """Audio file response schema."""
     id: int
