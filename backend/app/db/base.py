@@ -47,7 +47,11 @@ def get_db() -> Generator:
 def init_db() -> None:
     """Initialize database tables."""
     # Import all models to register them with Base
-    from app.models import course, student, session, audio_file, transcript
-    from app.models import job, voiceprint, consent, assessment, report
+    from app.models import (
+        Course, Student, Consent, Session, SessionParticipant,
+        AudioFile, Transcript, Utterance, Word, Job, JobStageResult,
+        Voiceprint, DisfluencyCandidate, Assessment, AssessmentEvidence,
+        Report, PronunciationCandidate, InteractionPair
+    )
     
     Base.metadata.create_all(bind=engine)

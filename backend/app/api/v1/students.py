@@ -3,7 +3,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.db.base import get_db
-from app.models.student import Student
+from app.models import Student
 from app.schemas import (
     StudentCreate, StudentResponse, StudentImportRequest,
     StudentDetailResponse

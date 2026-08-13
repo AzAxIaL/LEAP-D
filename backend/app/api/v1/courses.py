@@ -3,7 +3,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.db.base import get_db
-from app.models.course import Course
+from app.models import Course
 from app.schemas import CourseCreate, CourseUpdate, CourseResponse, CourseDetailResponse
 
 router = APIRouter()
