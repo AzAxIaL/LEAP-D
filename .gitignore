@@ -1,39 +1,30 @@
 ```
-# Dependencies
+# Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.Python
-env/
+*.py~
+
+# Dependencies
 venv/
 .venv/
-pip-log.txt
-pip-delete-this-directory.txt
-.tox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
+.env
+.env.local
+*.env.*
+
+# Database
+*.db
+
+# Logs
 *.log
-*.pot
-*.pyc
-*.pyo
-*.pyd
-.MF
-tags
-TAGS
-.idle
-.project
-.pydevproject
-.settings/
-.vscode/
-.idea/
-*.swp
-*.swo
+
+# Temporary files
+*.tmp
+*.temp
 *~
 .DS_Store
 Thumbs.db
+
+# Original rules preserved
 ```
