@@ -18,8 +18,10 @@ class ASRSettings(BaseSettings):
     language: str = Field(default="en", description="Primary language code")
     compute_type: str = Field(default="float32", description="Compute precision")
     
-    class Config:
-        env_prefix = "ASR_"
+    model_config = SettingsConfigDict(
+        env_prefix="ASR_",
+        extra="ignore"
+    )
 
 
 class DiarizationSettings(BaseSettings):
@@ -30,8 +32,10 @@ class DiarizationSettings(BaseSettings):
         description="Diarization model"
     )
     
-    class Config:
-        env_prefix = "DIARIZATION_"
+    model_config = SettingsConfigDict(
+        env_prefix="DIARIZATION_",
+        extra="ignore"
+    )
 
 
 class LLMSettings(BaseSettings):
@@ -46,8 +50,10 @@ class LLMSettings(BaseSettings):
         description="LLM API base URL"
     )
     
-    class Config:
-        env_prefix = "LLM_"
+    model_config = SettingsConfigDict(
+        env_prefix="LLM_",
+        extra="ignore"
+    )
 
 
 class StorageSettings(BaseSettings):
@@ -59,9 +65,11 @@ class StorageSettings(BaseSettings):
     artifacts_path: str = Field(default="./data/artifacts", description="Job artifacts")
     reports_path: str = Field(default="./data/reports", description="Generated reports")
     
-    class Config:
-        env_prefix = ""
-        env_file = ".env"
+    model_config = SettingsConfigDict(
+        env_prefix="",
+        env_file=".env",
+        extra="ignore"
+    )
 
 
 class ProcessingSettings(BaseSettings):
@@ -77,8 +85,10 @@ class ProcessingSettings(BaseSettings):
     ffmpeg_path: Optional[str] = Field(default=None, description="Path to FFmpeg binary")
     analysis_sample_rate: int = Field(default=16000, description="Analysis sample rate in Hz")
     
-    class Config:
-        env_prefix = ""
+    model_config = SettingsConfigDict(
+        env_prefix="",
+        extra="ignore"
+    )
 
 
 class IdentitySettings(BaseSettings):
@@ -87,8 +97,10 @@ class IdentitySettings(BaseSettings):
     assign_threshold: float = Field(default=0.85, ge=0, le=1)
     one_to_one_matching_enabled: bool = Field(default=True)
     
-    class Config:
-        env_prefix = "VOICEPRINT_"
+    model_config = SettingsConfigDict(
+        env_prefix="VOICEPRINT_",
+        extra="ignore"
+    )
 
 
 class DisfluencySettings(BaseSettings):
@@ -96,8 +108,10 @@ class DisfluencySettings(BaseSettings):
     confidence_threshold: float = Field(default=0.6, ge=0, le=1)
     review_required_for_cefr: bool = Field(default=True)
     
-    class Config:
-        env_prefix = "DISFLUENCY_"
+    model_config = SettingsConfigDict(
+        env_prefix="DISFLUENCY_",
+        extra="ignore"
+    )
 
 
 class PrivacySettings(BaseSettings):
@@ -106,8 +120,10 @@ class PrivacySettings(BaseSettings):
     consent_required_for_voiceprint: bool = Field(default=True)
     cloud_features_enabled: bool = Field(default=False)
     
-    class Config:
-        env_prefix = ""
+    model_config = SettingsConfigDict(
+        env_prefix="",
+        extra="ignore"
+    )
 
 
 class Settings(BaseSettings):
