@@ -1,1 +1,30 @@
-Nothing should be ignored based on the provided file changes. The only modified file is 'scripts/setup.ps1', which is a PowerShell script file and should not be added to .gitignore.
+```
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.py~
+
+# Dependencies
+venv/
+.venv/
+.env
+.env.local
+*.env.*
+
+# Database
+*.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+*~
+.DS_Store
+Thumbs.db
+
+# Original rules preserved
+```
