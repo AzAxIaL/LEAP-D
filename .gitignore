@@ -4,27 +4,41 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-*.py~
 
 # Dependencies
-venv/
 .venv/
+venv/
+env/
+requirements.txt.bak
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+*.swo
+
+# Environment
 .env
 .env.local
 *.env.*
 
-# Database
-*.db
+# Editors
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
 
-# Logs
-*.log
-
-# Temporary files
-*.tmp
-*.temp
-*~
+# OS
 .DS_Store
 Thumbs.db
 
-# Original rules preserved
+# Coverage
+.coverage
+coverage/
+htmlcov/
+
+# Build
+build/
+dist/
+*.egg-info/
 ```
