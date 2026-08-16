@@ -132,11 +132,12 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
+        extra="ignore",
     )
     
     # Database
     database_url: str = Field(
-        default="sqlite:///./data/efl_analysis.db",
+        default="sqlite:///./data/leap_d.db",
         description="Database connection URL"
     )
     
@@ -148,15 +149,62 @@ class Settings(BaseSettings):
     log_level: str = Field(default="INFO", description="Logging level")
     log_format: str = Field(default="json", description="Logging format")
     
-    # Nested settings
-    asr: ASRSettings = Field(default_factory=ASRSettings)
-    diarization: DiarizationSettings = Field(default_factory=DiarizationSettings)
-    llm: LLMSettings = Field(default_factory=LLMSettings)
-    storage: StorageSettings = Field(default_factory=StorageSettings)
-    processing: ProcessingSettings = Field(default_factory=ProcessingSettings)
-    identity: IdentitySettings = Field(default_factory=IdentitySettings)
-    disfluency: DisfluencySettings = Field(default_factory=DisfluencySettings)
-    privacy: PrivacySettings = Field(default_factory=PrivacySettings)
+    # ASR Settings (flat, not nested)
+    asr_provider: Literal["whisper", "faster-whisper", "whisperx", "crisperwhisper"] = Field(
+        default="whisper",
+        description="ASR provider to use"
+    )
+    asr_model: str = Field(default="base", description="ASR model name/size")
+    asr_language: str = Field(default="en", description="Primary language code")
+    whisper_compute_type: str = Field(default="float32", description="Compute precision")
+    
+    # Diarization Settings (flat, not nested)
+    diarization_provider: str = Field(default="pyannote", description="Diarization provider")
+    diarization_model: str = Field(
+        default="pyannote/speaker-diarization-3.1",
+        description="Diarization model"
+    )
+    
+    # LLM Settings (flat, not nested)
+    llm_provider: Literal["ollama", "openai", "anthropic"] = Field(
+        default="ollama",
+        description="LLM provider"
+    )
+    llm_model: str = Field(default="llama3.1:8b", description="LLM model name")
+    llm_base_url: Optional[str] = Field(
+        default="http://localhost:11434",
+        description="LLM API base URL"
+    )
+    
+    # Storage Settings (flat, not nested)
+    audio_storage_path: str = Field(default="./data/audio", description="Audio storage")
+    processed_storage_path: str = Field(default="./data/processed", description="Processed files")
+    voiceprints_storage_path: str = Field(default="./data/voiceprints", description="Voiceprints")
+    artifacts_storage_path: str = Field(default="./data/artifacts", description="Job artifacts")
+    reports_storage_path: str = Field(default="./data/reports", description="Generated reports")
+    
+    # Processing Settings (flat, not nested)
+    max_audio_duration_hours: int = Field(default=2, description="Maximum audio duration")
+    vad_min_speech_duration_ms: int = Field(default=250, description="VAD threshold")
+    silence_trimming_enabled: bool = Field(default=False, description="Enable silence trimming")
+    loudness_normalization_target: int = Field(
+        default=-16,
+        description="Loudness normalization target in LUFS"
+    )
+    
+    # Identity Settings (flat, not nested)
+    voiceprint_similarity_threshold: float = Field(default=0.75, ge=0, le=1)
+    voiceprint_assign_threshold: float = Field(default=0.85, ge=0, le=1)
+    one_to_one_matching_enabled: bool = Field(default=True)
+    
+    # Disfluency Settings (flat, not nested)
+    disfluency_confidence_threshold: float = Field(default=0.6, ge=0, le=1)
+    review_required_for_cefr: bool = Field(default=True)
+    
+    # Privacy Settings (flat, not nested)
+    default_retention_days: int = Field(default=365)
+    consent_required_for_voiceprint: bool = Field(default=True)
+    cloud_features_enabled: bool = Field(default=False)
     
     @property
     def is_sqlite(self) -> bool:

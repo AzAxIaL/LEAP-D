@@ -62,7 +62,7 @@ class ASRService:
         
         # Get provider
         provider = get_asr_provider(provider_name, model_size)
-        language = language or settings.asr.language
+        language = language or settings.asr_language
         
         # Transcribe
         start_time = time.time()

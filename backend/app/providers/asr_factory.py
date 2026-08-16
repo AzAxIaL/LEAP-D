@@ -27,8 +27,8 @@ def get_asr_provider(
     Raises:
         ValueError: If provider is not supported or not installed
     """
-    provider_name = provider_name or settings.asr.provider
-    model_size = model_size or settings.asr.model
+    provider_name = provider_name or settings.asr_provider
+    model_size = model_size or settings.asr_model
     device = device or ("cuda" if settings.gpu_enabled else "cpu")
     
     if provider_name == "whisper":
@@ -85,5 +85,5 @@ def transcribe_audio(
         ASRResult with utterances and word timestamps
     """
     provider = get_asr_provider(provider_name)
-    language = language or settings.asr.language
+    language = language or settings.asr_language
     return provider.transcribe(audio_path, language=language, **kwargs)
